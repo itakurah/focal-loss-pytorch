@@ -57,7 +57,7 @@ class FocalLoss(nn.Module):
         targets = targets.float()
 
         # Compute binary cross entropy
-        bce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
+        bce_loss = F.binary_cross_entropy_with_logits(probs, targets, reduction='none')
 
         # Compute focal weight
         p_t = probs * targets + (1 - probs) * (1 - targets)
