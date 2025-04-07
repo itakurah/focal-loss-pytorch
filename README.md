@@ -1,5 +1,9 @@
 # Focal Loss for PyTorch
 
+<div align="center">
+  <img src="https://raw.githubusercontent.com/itakurah/Focal-loss-PyTorch/main/focal_loss_banner.png" width="80%" height="80%" alt="Sitting Posture"> 
+</div>
+
 This repository contains an implementation of **Focal Loss**, a modification of cross-entropy loss designed to address class imbalance by focusing on hard-to-classify examples. This implementation is based on the paper [1]:
 
 **[Focal Loss for Dense Object Detection](https://arxiv.org/pdf/1708.02002)**  
