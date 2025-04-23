@@ -71,7 +71,7 @@ $$\text{FL}(p) = -\alpha\, [y \cdot (1 - p)^\gamma \log(p) + (1 - y) \cdot p^\ga
 ## Usage
 
 Install the Torch dependency:
-- Windows: `pip install  -r requirements.txt`
+- Windows: `pip install -r requirements.txt`
 - Linux: `pip3 install -r requirements.txt`
 
 You can use the `FocalLoss` class for different classification tasks by setting the `task_type` argument.
