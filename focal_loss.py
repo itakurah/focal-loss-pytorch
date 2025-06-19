@@ -78,30 +78,49 @@ class FocalLoss(nn.Module):
         return loss
 
     def multi_class_focal_loss(self, inputs, targets):
-        """ Focal loss for multi-class classification. """
-        if self.alpha is not None:
-            alpha = self.alpha.to(inputs.device)
-
-        # Convert logits to probabilities with softmax
+        """Focal loss for multi-class classification.
+           Supports both hard integer targets and soft/probabilistic targets.
+        """
+        # Convert logits to probabilities
         probs = F.softmax(inputs, dim=1)
 
-        # One-hot encode the targets
-        targets_one_hot = F.one_hot(targets, num_classes=self.num_classes).float()
-
-        # Compute cross-entropy for each class
-        ce_loss = -targets_one_hot * torch.log(probs)
-
-        # Compute focal weight
-        p_t = torch.sum(probs * targets_one_hot, dim=1)  # p_t for each sample
-        focal_weight = (1 - p_t) ** self.gamma
-
-        # Apply alpha if provided (per-class weighting)
+        # Prepare alpha on the correct device
         if self.alpha is not None:
-            alpha_t = alpha.gather(0, targets)
-            ce_loss = alpha_t.unsqueeze(1) * ce_loss
+            if isinstance(self.alpha, (float, int)):
+                alpha = torch.tensor(self.alpha, device=inputs.device)
+            else:
+                alpha = self.alpha.to(inputs.device)
+        else:
+            alpha = None
 
-        # Apply focal loss weight
-        loss = focal_weight.unsqueeze(1) * ce_loss
+        if targets.dim() == 1:
+            # ----- HARD LABELS -----
+            targets_one_hot = F.one_hot(targets, num_classes=self.num_classes).float()
+            ce_loss = -targets_one_hot * torch.log(probs + 1e-8)
+            p_t = (probs * targets_one_hot).sum(dim=1)  # predicted prob of true class
+        else:
+            # ----- SOFT LABELS -----
+            targets = targets.float()
+            ce_loss = -targets * torch.log(probs + 1e-8)
+            p_t = (probs * targets).sum(dim=1)
+
+        # Focal weighting
+        focal_weight = (1 - p_t) ** self.gamma
+        focal_weight = focal_weight.unsqueeze(1)  # shape: (B, 1)
+
+        # Apply class weighting alpha if provided
+        if alpha is not None:
+            if alpha.dim() == 0:
+                # scalar alpha
+                ce_loss = alpha * ce_loss
+            else:
+                # vector of per-class alpha
+                alpha = alpha.view(1, -1)  # shape (1, num_classes)
+                ce_loss = alpha * ce_loss
+
+        # Compute final focal loss
+        loss = focal_weight * ce_loss
+        loss = loss.sum(dim=1)  # sum over classes
 
         if self.reduction == 'mean':
             return loss.mean()
