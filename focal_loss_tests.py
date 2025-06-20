@@ -170,7 +170,7 @@ class TestFocalLoss(unittest.TestCase):
 
     def test_missing_num_classes(self):
         """Test that num_classes is required for multi-class if alpha is a list."""
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             FocalLoss(gamma=2, alpha=[0.1, 0.2], task_type='multi-class')  # missing num_classes
 
     def test_extreme_logits_and_gamma_zero(self):
