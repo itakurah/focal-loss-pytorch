@@ -108,37 +108,50 @@ class TestFocalLoss(unittest.TestCase):
             criterion(inputs, targets)
 
     def test_reduction_modes(self):
-        """Test sum and none reduction modes for binary, multi-class, and multi-label."""
-        inputs = torch.randn(8)
-        targets = torch.randint(0, 2, (8,)).float()
-        for reduction in ['sum', 'none']:
-            criterion = FocalLoss(gamma=2, task_type='binary', reduction=reduction)
-            loss = criterion(inputs, targets)
-            if reduction == 'sum':
-                self.assertEqual(loss.dim(), 0)  # scalar
-            else:
-                self.assertEqual(loss.shape, (8,))  # per-sample
-
+        """Test all reduction modes ('sum', 'mean', 'none') for FocalLoss across tasks."""
+        batch_size = 8
         num_classes = 3
-        inputs_mc = torch.randn(8, num_classes)
-        targets_mc = torch.randint(0, num_classes, (8,))
-        for reduction in ['sum', 'none']:
-            criterion = FocalLoss(gamma=2, task_type='multi-class', num_classes=num_classes, reduction=reduction)
-            loss = criterion(inputs_mc, targets_mc)
-            if reduction == 'sum':
-                self.assertEqual(loss.dim(), 0)
-            else:
-                self.assertEqual(loss.shape, (8,))  # per-sample
+        inputs_binary = torch.randn(batch_size)
+        targets_binary = torch.randint(0, 2, (batch_size,)).float()
 
-        inputs_ml = torch.randn(8, num_classes)
-        targets_ml = torch.randint(0, 2, (8, num_classes)).float()
-        for reduction in ['sum', 'none']:
-            criterion = FocalLoss(gamma=2, task_type='multi-label', reduction=reduction)
-            loss = criterion(inputs_ml, targets_ml)
-            if reduction == 'sum':
-                self.assertEqual(loss.dim(), 0)
-            else:
-                self.assertEqual(loss.shape, (8, num_classes))  # per-sample per-label
+        inputs_mc = torch.randn(batch_size, num_classes)
+        targets_mc_hard = torch.randint(0, num_classes, (batch_size,))
+        targets_mc_soft = torch.softmax(torch.randn(batch_size, num_classes), dim=1)
+
+        inputs_ml = torch.randn(batch_size, num_classes)
+        targets_ml = torch.randint(0, 2, (batch_size, num_classes)).float()
+
+        test_cases = [
+            ("binary", inputs_binary, targets_binary, None),
+            ("multi-class", inputs_mc, targets_mc_hard, None),
+            ("multi-class", inputs_mc, targets_mc_soft, "soft"),
+            ("multi-label", inputs_ml, targets_ml, None),
+        ]
+        reductions = ["sum", "mean", "none"]
+
+        for task_type, inputs, targets, label_type in test_cases:
+            for reduction in reductions:
+                criterion_kwargs = {"gamma": 2, "reduction": reduction, "task_type": task_type}
+                if task_type == "multi-class":
+                    criterion_kwargs["num_classes"] = num_classes
+                criterion = FocalLoss(**criterion_kwargs)
+
+                if label_type == "soft" and task_type == "multi-class":
+                    loss = criterion.multi_class_focal_loss(inputs, targets)
+                else:
+                    loss = criterion(inputs, targets)
+
+                if reduction in ["sum", "mean"]:
+                    self.assertEqual(loss.dim(), 0,
+                                     f"Expected scalar loss for {task_type} with reduction={reduction}")
+                else:
+                    expected_shape = {
+                        "binary": (batch_size,),
+                        "multi-class": (batch_size,),
+                        "multi-label": (batch_size, num_classes),
+                    }[task_type]
+                    self.assertEqual(loss.shape, expected_shape,
+                                     f"Expected loss shape {expected_shape} for {task_type} with reduction={reduction}")
 
     def test_multi_label_soft_targets(self):
         """Test multi-label focal loss with soft probabilistic targets."""
