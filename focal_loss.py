@@ -14,13 +14,13 @@ class FocalLoss(nn.Module):
         :param num_classes: Number of classes (only required for multi-class classification)
         """
         super(FocalLoss, self).__init__()
+        if task_type == 'multi-class' and num_classes is None:
+            raise ValueError("num_classes must be specified for multi-class classification tasks")
+
         self.gamma = gamma
         self.alpha = alpha
         self.reduction = reduction
         self.task_type = task_type
-
-        if task_type == 'multi-class' and num_classes is None:
-            raise ValueError("num_classes must be specified for multi-class classification tasks")
         self.num_classes = num_classes
 
         # Handle alpha for class balancing in multi-class tasks
