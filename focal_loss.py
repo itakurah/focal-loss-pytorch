@@ -14,6 +14,9 @@ class FocalLoss(nn.Module):
         :param num_classes: Number of classes (only required for multi-class classification)
         """
         super(FocalLoss, self).__init__()
+        if task_type == 'multi-class' and num_classes is None:
+            raise ValueError("num_classes must be specified for multi-class classification tasks")
+
         self.gamma = gamma
         self.alpha = alpha
         self.reduction = reduction
@@ -22,7 +25,6 @@ class FocalLoss(nn.Module):
 
         # Handle alpha for class balancing in multi-class tasks
         if task_type == 'multi-class' and alpha is not None and isinstance(alpha, (list, torch.Tensor)):
-            assert num_classes is not None, "num_classes must be specified for multi-class classification"
             if isinstance(alpha, list):
                 self.alpha = torch.Tensor(alpha)
             else:
