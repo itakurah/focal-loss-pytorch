@@ -8,7 +8,7 @@ This repository contains an implementation of **Focal Loss**, a modification of 
 
 **[Focal Loss for Dense Object Detection](https://arxiv.org/pdf/1708.02002)** 
 
-By Tsung-Yi Lin, Priya Goyal, Ross Girshick, Kaiming He, and Piotr Dollár
+*By Tsung-Yi Lin, Priya Goyal, Ross Girshick, Kaiming He, and Piotr Dollár
 
 The `focal_loss` class in this repository supports the following tasks:
 - **Binary Classification**
