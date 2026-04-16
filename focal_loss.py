@@ -51,13 +51,12 @@ class FocalLoss(nn.Module):
             raise ValueError(
                 f"Unsupported task_type '{self.task_type}'. Use 'binary', 'multi-class', or 'multi-label'.")
 
-    def binary_focal_loss(self, inputs, targets):
+    def binary_focal_loss(self, logits, targets):
         """ Focal loss for binary classification. """
-        probs = torch.sigmoid(inputs)
         targets = targets.float()
 
         # Compute binary cross entropy
-        bce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
+        bce_loss = F.binary_cross_entropy_with_logits(logits, targets, reduction='none')
 
         # Compute focal weight
         p_t = probs * targets + (1 - probs) * (1 - targets)
@@ -109,12 +108,11 @@ class FocalLoss(nn.Module):
             return loss.sum()
         return loss
 
-    def multi_label_focal_loss(self, inputs, targets):
+    def multi_label_focal_loss(self, logits, targets):
         """ Focal loss for multi-label classification. """
-        probs = torch.sigmoid(inputs)
 
         # Compute binary cross entropy
-        bce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
+        bce_loss = F.binary_cross_entropy_with_logits(logits, targets, reduction='none')
 
         # Compute focal weight
         p_t = probs * targets + (1 - probs) * (1 - targets)
