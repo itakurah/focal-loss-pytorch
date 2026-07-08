@@ -102,6 +102,7 @@ class FocalLoss(nn.Module):
 
         # Apply focal loss weight
         loss = focal_weight.unsqueeze(1) * ce_loss
+        loss = loss.sum(dim=1)
 
         if self.reduction == 'mean':
             return loss.mean()
